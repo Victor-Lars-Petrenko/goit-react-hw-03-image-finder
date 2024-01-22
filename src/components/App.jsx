@@ -75,12 +75,13 @@ export class App extends Component {
   };
 
   handleFormSubmit = keyWord => {
-    if (this.state.keyWord === keyWord) {
+    const validatedKey = keyWord.toLowerCase();
+    if (this.state.keyWord === validatedKey) {
       return toast.info(
         `You are already viewing results for the query "${keyWord}"`
       );
     }
-    this.setState({ keyWord: keyWord.toLowerCase(), page: 1, results: [] });
+    this.setState({ keyWord: validatedKey, page: 1, results: [] });
   };
 
   handleItemClick = (imageUrl, tags) => {
