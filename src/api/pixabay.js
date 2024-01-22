@@ -11,8 +11,7 @@ export async function getImages(searchQuery, pageNumber) {
   });
   const URL = `https://pixabay.com/api/?${searchParams}`;
 
-  const fetchResult = await axios.get(URL);
-  const { data } = fetchResult;
+  const { data } = await axios.get(URL);
 
   return data;
 }

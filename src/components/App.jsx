@@ -1,6 +1,6 @@
 import { Component } from 'react';
 
-import { getImages } from './helpers/api';
+import { getImages } from '../api/pixabay';
 import css from './App.module.css';
 
 import { Searchbar } from './Searchbar';
@@ -27,18 +27,29 @@ export class App extends Component {
   };
 
   componentDidUpdate(_, prevState) {
-    const prevWord = prevState.keyWord;
-    const newWord = this.state.keyWord;
-    if (prevWord !== newWord) {
-      this.setState({ results: [] });
-      this.updateQueryResult(newWord, 1)
-        .then(({ total }) => {
-          if (total === 0) {
-            toast.info('Sorry, there are no results for your request');
-          } else {
-            toast.success(
-              `We found ${total} ${total === 1 ? 'result' : 'results'}`
+    if (
+      prevState.keyWord !== this.state.keyWord ||
+      prevState.page !== this.state.page
+    ) {
+      const { keyWord, page } = this.state;
+      this.updateQueryResult(keyWord, page)
+        .then(totalHits => {
+          if (totalHits === 0) {
+            return toast.info('Sorry, there are no results for your request');
+          }
+          if (page === 1) {
+            return toast.success(
+              `We found ${totalHits} ${totalHits === 1 ? 'result' : 'results'}`
             );
+          }
+          if (page < Math.ceil(totalHits / 12)) {
+            const rest = totalHits - page * 12;
+            return toast.success(
+              `We found ${rest} more ${rest === 1 ? 'result' : 'results'}`
+            );
+          }
+          if (page === Math.ceil(totalHits / 12)) {
+            return toast.info('There are no more results for this request');
           }
         })
         .catch(() => toast.error('Something get wrong'))
@@ -56,27 +67,31 @@ export class App extends Component {
       page: pageNumber,
       loadMore: pageNumber < Math.ceil(totalHits / 12),
     }));
-    return { total: totalHits, pageNumber };
+    return totalHits;
   };
 
-  paginate = () => {
-    const { keyWord, page } = this.state;
-    this.updateQueryResult(keyWord, page + 1)
-      .then(({ total, pageNumber }) => {
-        if (pageNumber < Math.ceil(total / 12)) {
-          toast.success(`We found ${total - pageNumber * 12} more results`);
-        } else {
-          toast.info('There are no more results for this request');
-        }
-      })
-      .catch(() => toast.error('Something get wrong'))
-      .finally(() => {
-        this.setState({ loading: false });
-      });
+  incrementPage = () => {
+    this.setState(prev => ({ page: prev.page + 1 }));
   };
+
+  // paginate = () => {
+  //   const { keyWord, page } = this.state;
+  //   this.updateQueryResult(keyWord, page + 1)
+  //     .then(({ total, pageNumber }) => {
+  //       if (pageNumber < Math.ceil(total / 12)) {
+  //         toast.success(`We found ${total - pageNumber * 12} more results`);
+  //       } else {
+  //         toast.info('There are no more results for this request');
+  //       }
+  //     })
+  //     .catch(() => toast.error('Something get wrong'))
+  //     .finally(() => {
+  //       this.setState({ loading: false });
+  //     });
+  // };
 
   handleFormSubmit = keyWord => {
-    this.setState({ keyWord });
+    this.setState({ keyWord, page: 1, results: [] });
   };
 
   handleItemClick = (imageUrl, tags) => {
@@ -100,7 +115,8 @@ export class App extends Component {
   };
 
   render() {
-    const { handleFormSubmit, paginate, handleItemClick, closeModal } = this;
+    const { handleFormSubmit, incrementPage, handleItemClick, closeModal } =
+      this;
     const {
       results,
       loading,
@@ -115,7 +131,7 @@ export class App extends Component {
           <ImageGallery items={results} onClick={handleItemClick} />
         )}
         {loading && <Loader />}
-        {loadMore && !loading && <Button onClick={paginate} />}
+        {loadMore && !loading && <Button onClick={incrementPage} />}
         {openModal && (
           <Modal close={closeModal}>
             <img src={imageUrl} alt={tags}></img>
