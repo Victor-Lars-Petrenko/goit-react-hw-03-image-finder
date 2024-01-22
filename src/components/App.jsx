@@ -74,24 +74,13 @@ export class App extends Component {
     this.setState(prev => ({ page: prev.page + 1 }));
   };
 
-  // paginate = () => {
-  //   const { keyWord, page } = this.state;
-  //   this.updateQueryResult(keyWord, page + 1)
-  //     .then(({ total, pageNumber }) => {
-  //       if (pageNumber < Math.ceil(total / 12)) {
-  //         toast.success(`We found ${total - pageNumber * 12} more results`);
-  //       } else {
-  //         toast.info('There are no more results for this request');
-  //       }
-  //     })
-  //     .catch(() => toast.error('Something get wrong'))
-  //     .finally(() => {
-  //       this.setState({ loading: false });
-  //     });
-  // };
-
   handleFormSubmit = keyWord => {
-    this.setState({ keyWord, page: 1, results: [] });
+    if (this.state.keyWord === keyWord) {
+      return toast.info(
+        `You are already viewing results for the query "${keyWord}"`
+      );
+    }
+    this.setState({ keyWord: keyWord.toLowerCase(), page: 1, results: [] });
   };
 
   handleItemClick = (imageUrl, tags) => {
